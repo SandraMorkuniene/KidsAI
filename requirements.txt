@@ -5,3 +5,7 @@ pydub==0.25.1
 streamlit-audiorecorder==0.0.6
 gTTS==2.5.4
 
+
+# Required to prevent OpenAI client startup errors
+httpx==0.27.2
+urllib3<2
