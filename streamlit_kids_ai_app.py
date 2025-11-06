@@ -5,6 +5,11 @@ from duckduckgo_search import DDGS
 import base64
 import os
 
+
+
+client = OpenAI()  # <-- no error means success ✅
+st.write("✅ OpenAI client initialized successfully")
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("🎙️ Kids AI Friend")
