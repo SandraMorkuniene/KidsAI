@@ -1,7 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 from duckduckgo_search import DDGS
-from st_mic_recorder import mic_recorder
+from streamlit_mic_recorder import mic_recorder
 import tempfile
 import os
 
