@@ -1,59 +1,91 @@
 import streamlit as st
 from openai import OpenAI
-import tempfile
 from duckduckgo_search import DDGS
+from audiorecorder import audiorecorder
+import tempfile
 import base64
 import os
 
+client = OpenAI()  # Automatically reads OPENAI_API_KEY from Streamlit Secrets
 
+st.set_page_config(page_title="Kids AI Helper 🌈", page_icon="🌈")
+st.title("🌈 Friendly AI Helper for Kids")
+st.write("Speak your question, and I will help you understand it in a friendly way!")
 
-client = OpenAI()  # <-- no error means success ✅
-st.write("✅ OpenAI client initialized successfully")
+# --- Language Selector ---
+language = st.selectbox("Choose your language:", ["English", "Lithuanian", "Latvian", "Polish"])
+lang_code_map = {"English": "en", "Lithuanian": "lt", "Latvian": "lv", "Polish": "pl"}
+lang_code = lang_code_map[language]
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# --- Record Audio ---
+audio = audiorecorder("🎤 Click to record", "🛑 Stop recording")
 
-st.title("🎙️ Kids AI Friend")
+if len(audio) > 0:
+    st.audio(audio.export().read(), format="audio/wav")
 
-# Step 1: Record audio
-audio_file = st.file_uploader("Ask me something!", type=["wav", "mp3", "m4a"])
+    # Save temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        audio.export(tmp.name, format="wav")
+        audio_file_path = tmp.name
 
-if audio_file:
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(audio_file.read())
-        tmp_path = tmp.name
+    st.write("📝 **Transcribing...**")
+    transcript = client.audio.transcriptions.create(
+        model="gpt-4o-transcribe",
+        file=open(audio_file_path, "rb")
+    ).text
 
-    # Step 2: Speech-to-Text (Whisper)
-    with open(tmp_path, "rb") as f:
-        transcript = client.audio.transcriptions.create(
-            model="gpt-4o-mini-transcribe",
-            file=f
-        )
-    question = transcript.text
-    st.write(f"**You asked:** {question}")
+    st.write(f"**You said:** {transcript}")
 
-    # Step 3: Web Search
-    search_results = DDGS().text(question, max_results=3)
-    context = "\n".join([r["body"] for r in search_results])
-
-    # Step 4: LLM Reasoning
-    response = client.chat.completions.create(
+    # --- Decide whether to search ---
+    search_check_prompt = f"""
+    The child asked: "{transcript}"
+    Should we search the web to answer this? Reply ONLY 'yes' or 'no'.
+    """
+    need_search = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a friendly tutor for children aged 7-12. Explain simply."},
-            {"role": "user", "content": f"Question: {question}\n\nInformation:\n{context}"}
-        ]
-    )
-    answer = response.choices[0].message.content
-    st.write(f"**Answer:** {answer}")
+        messages=[{"role": "system", "content": search_check_prompt}]
+    ).choices[0].message.content.strip().lower()
 
-    # Step 5: Text-to-Speech
-    speech = client.audio.speech.create(
+    search_results = ""
+    if "yes" in need_search:
+        st.write("🔍 Searching...")
+        with DDGS() as ddgs:
+            results = ddgs.text(transcript, max_results=3)
+        for r in results:
+            search_results += f"- {r['title']}: {r['body']}\n"
+
+    # --- Generate Kid-Friendly Answer ---
+    final_prompt = f"""
+    You are a **very friendly, kind teacher** explaining things to a child.
+    Speak warmly, clearly, and simply.
+
+    Child question: "{transcript}"
+    Web info (may be empty): {search_results}
+
+    Answer in **{language}**, with a calm, soft, reassuring tone.
+    """
+    answer = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "system", "content": final_prompt}]
+    ).choices[0].message.content
+
+    st.write("💬 **Answer:**")
+    st.write(answer)
+
+    # --- Text to Speech (Soft/Warm Voice) ---
+    st.write("🔊 Generating voice...")
+    tts_audio = client.audio.speech.create(
         model="gpt-4o-mini-tts",
-        voice="alloy",
+        voice="alloy",  # warm soft tone
         input=answer
     )
-    audio_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-    audio_out.write(speech.read())
+    audio_bytes = tts_audio.read()
+
+    st.audio(audio_bytes, format="audio/mp3")
+
+    # Optional Download Button
+    st.download_button("⬇️ Download Answer Audio", audio_bytes, "answer.mp3")
+
     audio_out.flush()
 
     # Step 6: Play audio
