@@ -77,7 +77,12 @@ Rules:
         ]
     )
 
-    answer = response.output_text
+    answer = ""
+    for item in response.output:
+        if item.type == "message":
+            for content in item.content:
+                if content.type == "output_text":
+                    answer += content.text
 
     # --- Save assistant reply to memory ---
     st.session_state.chat_history.append({
