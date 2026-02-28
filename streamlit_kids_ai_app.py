@@ -56,7 +56,7 @@ if audio:
     st.write("💬 Thinking...")
 
     # --- Generate Answer with Web Search + Memory ---
-    response = client.responses.create(
+    response = OpenAI().responses.create(
         model="gpt-4.1-mini",  # Supports web_search
         tools=[{"type": "web_search"}],
         input=[
