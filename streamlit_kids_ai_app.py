@@ -8,6 +8,9 @@ client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 st.set_page_config(page_title="Kids AI Helper 🌈", page_icon="🌈")
 st.title("🌈 Friendly AI Helper for Kids")
 st.write("Speak your question and I will answer in a friendly tone!")
+# --- Initialize memory ---
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # --- Language selection ---
 language = st.selectbox("Language:", ["Lithuanian", "English"])
@@ -36,51 +39,45 @@ if audio:
 
     st.write(f"**You said:** {transcription}")
 
-    # --- STEP 1: Decide Knowledge Mode ---
-    st.write("🧠 Thinking...")
+    # --- Add user message to memory ---
+    st.session_state.chat_history.append({
+        "role": "user",
+        "content": transcription
+    })
+    # --- Keep memory short (last 6 messages) ---
+    st.session_state.chat_history = st.session_state.chat_history[-10:]
 
-    knowledge_check = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": f"""
-You are deciding how to answer a child's question.
-
-Question: "{transcription}"
-
-If this requires recent facts (like current news, weather, or events after 2023),
-reply ONLY with: RECENT
-
-Otherwise reply ONLY with: GENERAL
-"""
-            }
-        ],
-        temperature=0
-    ).choices[0].message.content.strip()
-
-    # --- STEP 2: Generate Answer ---
-    answer_prompt = f"""
+    # --- System Prompt ---
+    system_prompt = f"""
 You are a very friendly, gentle teacher speaking to a child.
 
 Rules:
 - Speak simply and warmly
 - Keep answers short and clear
 - Be positive and encouraging
-- If unsure about very recent events, say kindly that you may not know the newest updates
+- Remember the conversation context
 - Respond in: {language}
-
-Child asked:
-"{transcription}"
-
-Knowledge type: {knowledge_check}
 """
 
-    answer = client.chat.completions.create(
+    # --- Build full message list ---
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(st.session_state.chat_history)
+
+    st.write("💬 Thinking...")
+
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "system", "content": answer_prompt}],
+        messages=messages,
         temperature=0.7
-    ).choices[0].message.content
+    )
+
+    answer = response.choices[0].message.content
+
+    # --- Save assistant response to memory ---
+    st.session_state.chat_history.append({
+        "role": "assistant",
+        "content": answer
+    })
 
     st.write("💬 **Answer:**")
     st.write(answer)
@@ -90,7 +87,7 @@ Knowledge type: {knowledge_check}
 
     tts = client.audio.speech.create(
         model="gpt-4o-mini-tts",
-        voice="alloy",  # warm & soft
+        voice="alloy",
         input=answer
     )
 
@@ -98,3 +95,5 @@ Knowledge type: {knowledge_check}
 
     st.audio(audio_bytes, format="audio/mp3")
     st.download_button("⬇️ Download Voice", audio_bytes, "answer.mp3")
+    
+ 
