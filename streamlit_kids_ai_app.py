@@ -16,6 +16,14 @@ if "chat_history" not in st.session_state:
 # --- Language selection ---
 language = st.selectbox("Language:", ["Lithuanian", "English"])
 
+# Map UI language to ISO code
+lang_map = {
+    "English": "en",
+    "Lithuanian": "lt"
+}
+
+selected_lang_code = lang_map[language]
+
 # --- Reset conversation button ---
 if st.button("🔄 Start New Conversation"):
     st.session_state.chat_history = []
@@ -39,8 +47,9 @@ if audio:
     #st.write("📝 Transcribing...")
 
     transcription = client.audio.transcriptions.create(
-        model="gpt-4o-transcribe",
-        file=open(wav_file, "rb")
+    model="gpt-4o-transcribe",
+    file=open(wav_file, "rb"),
+        language=selected_lang_code  # force language
     ).text
 
     st.write(f"**You said:** {transcription}")
