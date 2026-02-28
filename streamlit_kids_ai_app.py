@@ -66,12 +66,22 @@ Rules:
     st.write("💬 Thinking...")
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.7
-    )
+        model="gpt-4.1-mini",
+        tools=[{"type": "web_search"}],
+        input=[
+        {
+            "role": "system",
+            "content": f"""
+You are a very friendly teacher for children.
+Speak simply and warmly.
+Respond in {language}.
+"""
+        },
+        *st.session_state.chat_history
+    ]
+)  
 
-    answer = response.choices[0].message.content
+    answer = response.output_text
 
     # --- Save assistant response to memory ---
     st.session_state.chat_history.append({
