@@ -8,12 +8,18 @@ client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 st.set_page_config(page_title="Kids AI Helper 🌈", page_icon="🌈")
 st.title("🌈 Friendly AI Helper for Kids")
 st.write("Speak your question and I will answer in a friendly tone!")
+
 # --- Initialize memory ---
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # --- Language selection ---
 language = st.selectbox("Language:", ["Lithuanian", "English"])
+
+# --- Reset conversation button ---
+if st.button("🔄 Start New Conversation"):
+    st.session_state.chat_history = []
+    st.success("Conversation reset!")
 
 # --- Microphone Recorder ---
 audio = mic_recorder(
@@ -30,7 +36,7 @@ if audio:
         tmp.write(audio["bytes"])
         wav_file = tmp.name
 
-    st.write("📝 Transcribing...")
+    #st.write("📝 Transcribing...")
 
     transcription = client.audio.transcriptions.create(
         model="gpt-4o-transcribe",
@@ -44,46 +50,36 @@ if audio:
         "role": "user",
         "content": transcription
     })
-    # --- Keep memory short (last 6 messages) ---
+    # --- Keep memory short (last 10 messages) ---
     st.session_state.chat_history = st.session_state.chat_history[-10:]
 
-    # --- System Prompt ---
-    system_prompt = f"""
+    st.write("💬 Thinking...")
+
+    # --- Generate Answer with Web Search + Memory ---
+    response = client.responses.create(
+        model="gpt-4.1-mini",  # Supports web_search
+        tools=[{"type": "web_search"}],
+        input=[
+            {
+                "role": "system",
+                "content": f"""
 You are a very friendly, gentle teacher speaking to a child.
 
 Rules:
 - Speak simply and warmly
-- Keep answers short and clear
-- Be positive and encouraging
-- Remember the conversation context
+- Keep answers clear and not too long
+- Be encouraging and positive
+- If using web search results, explain them simply
 - Respond in: {language}
 """
-
-    # --- Build full message list ---
-    messages = [{"role": "system", "content": system_prompt}]
-    messages.extend(st.session_state.chat_history)
-
-    st.write("💬 Thinking...")
-
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        tools=[{"type": "web_search"}],
-        input=[
-        {
-            "role": "system",
-            "content": f"""
-You are a very friendly teacher for children.
-Speak simply and warmly.
-Respond in {language}.
-"""
-        },
-        *st.session_state.chat_history
-    ]
-)  
+            },
+            *st.session_state.chat_history
+        ]
+    )
 
     answer = response.output_text
 
-    # --- Save assistant response to memory ---
+    # --- Save assistant reply to memory ---
     st.session_state.chat_history.append({
         "role": "assistant",
         "content": answer
@@ -105,5 +101,4 @@ Respond in {language}.
 
     st.audio(audio_bytes, format="audio/mp3")
     st.download_button("⬇️ Download Voice", audio_bytes, "answer.mp3")
-    
- 
+
