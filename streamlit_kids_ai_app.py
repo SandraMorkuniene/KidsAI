@@ -1,9 +1,7 @@
 import streamlit as st
 from openai import OpenAI
-from duckduckgo_search import DDGS
 from streamlit_mic_recorder import mic_recorder
 import tempfile
-import os
 
 client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 
@@ -12,11 +10,9 @@ st.title("🌈 Friendly AI Helper for Kids")
 st.write("Speak your question and I will answer in a friendly tone!")
 
 # --- Language selection ---
-language = st.selectbox("Language:", ["English", "Lithuanian", "Latvian", "Polish"])
-lang_map = {"English": "en", "Lithuanian": "lt", "Latvian": "lv", "Polish": "pl"}
-lang = lang_map[language]
+language = st.selectbox("Language:", ["Lithuanian", "English"])
 
-# --- Microphone Recorder (No ffmpeg needed ✅) ---
+# --- Microphone Recorder ---
 audio = mic_recorder(
     start_prompt="🎤 Click to start recording",
     stop_prompt="🛑 Stop recording",
@@ -40,54 +36,65 @@ if audio:
 
     st.write(f"**You said:** {transcription}")
 
-    # Decide whether search is needed
-    check = client.chat.completions.create(
+    # --- STEP 1: Decide Knowledge Mode ---
+    st.write("🧠 Thinking...")
+
+    knowledge_check = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "system", "content": f"""
-        The child asked: "{transcription}"
-        Should we look up information online?
-        Reply only 'yes' or 'no'.
-        """}]
-    ).choices[0].message.content.strip().lower()
+        messages=[
+            {
+                "role": "system",
+                "content": f"""
+You are deciding how to answer a child's question.
 
-    info = ""
-    if "yes" in check:
-        st.write("🔍 Searching...")
-        with DDGS() as ddgs:
-            results = ddgs.text(transcription, max_results=3)
-            for r in results:
-                info += f"{r['title']}: {r['body']}\n"
+Question: "{transcription}"
 
-    # Generate friendly answer
-    st.write("💬 Thinking...")
+If this requires recent facts (like current news, weather, or events after 2023),
+reply ONLY with: RECENT
 
+Otherwise reply ONLY with: GENERAL
+"""
+            }
+        ],
+        temperature=0
+    ).choices[0].message.content.strip()
+
+    # --- STEP 2: Generate Answer ---
     answer_prompt = f"""
-    You are a very friendly, gentle teacher speaking to a child.
-    Speak simply, warmly, and kindly.
-    
-    Language: {language}
-    Child asked: "{transcription}"
-    Extra info (optional): {info}
-    """
+You are a very friendly, gentle teacher speaking to a child.
+
+Rules:
+- Speak simply and warmly
+- Keep answers short and clear
+- Be positive and encouraging
+- If unsure about very recent events, say kindly that you may not know the newest updates
+- Respond in: {language}
+
+Child asked:
+"{transcription}"
+
+Knowledge type: {knowledge_check}
+"""
 
     answer = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "system", "content": answer_prompt}]
+        messages=[{"role": "system", "content": answer_prompt}],
+        temperature=0.7
     ).choices[0].message.content
 
     st.write("💬 **Answer:**")
     st.write(answer)
 
-    # Text → Speech (Soft/Warm Voice)
+    # --- Text to Speech ---
     st.write("🔊 Speaking...")
 
     tts = client.audio.speech.create(
         model="gpt-4o-mini-tts",
-        voice="alloy",  # soft & warm
+        voice="alloy",  # warm & soft
         input=answer
     )
 
     audio_bytes = tts.read()
-    st.audio(audio_bytes, format="audio/mp3")
 
+    st.audio(audio_bytes, format="audio/mp3")
     st.download_button("⬇️ Download Voice", audio_bytes, "answer.mp3")
