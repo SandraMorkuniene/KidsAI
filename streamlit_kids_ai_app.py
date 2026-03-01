@@ -61,7 +61,7 @@ if audio:
         language=selected_lang_code  # force language
     ).text
 
-    st.write(f"**You said:** {transcription}")
+    #st.write(f"**You said:** {transcription}")
 
     # --- Add user message to memory ---
     st.session_state.chat_history.append({
@@ -108,8 +108,8 @@ Rules:
         "content": answer
     })
 
-    st.write("💬 **Answer:**")
-    st.write(answer)
+    #st.write("💬 **Answer:**")
+    #st.write(answer)
 
     # --- Text to Speech ---
     st.write("🔊 Speaking...")
