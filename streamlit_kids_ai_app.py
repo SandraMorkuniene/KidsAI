@@ -16,7 +16,9 @@ if "chat_history" not in st.session_state:
 # --- Reset conversation button ---
 if st.button("🔄 Start New Conversation"):
     st.session_state.chat_history = []
-    st.success("Conversation reset!")    
+    st.rerun()
+    #st.success("Conversation reset!")    
+
 
 # --- Language selection ---
 language = st.selectbox("Language:", ["Lithuanian", "English"])
