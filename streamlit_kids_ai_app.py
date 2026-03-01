@@ -5,13 +5,18 @@ import tempfile
 
 client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 
-st.set_page_config(page_title="Kids AI Helper 🌈", page_icon="🌈")
-st.title("🌈 Friendly AI Helper for Kids")
-st.write("Speak your question and I will answer in a friendly tone!")
+st.set_page_config(page_title="Kids AI 🌈", page_icon="🌈")
+st.title("🌈 Kids AI")
+st.write("Shoot your question!")
 
 # --- Initialize memory ---
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+
+# --- Reset conversation button ---
+if st.button("🔄 Start New Conversation"):
+    st.session_state.chat_history = []
+    st.success("Conversation reset!")    
 
 # --- Language selection ---
 language = st.selectbox("Language:", ["Lithuanian", "English"])
@@ -24,10 +29,6 @@ lang_map = {
 
 selected_lang_code = lang_map[language]
 
-# --- Reset conversation button ---
-if st.button("🔄 Start New Conversation"):
-    st.session_state.chat_history = []
-    st.success("Conversation reset!")
 
 # --- Microphone Recorder ---
 audio = mic_recorder(
@@ -107,7 +108,7 @@ Rules:
 
     tts = client.audio.speech.create(
         model="gpt-4o-mini-tts",
-        voice="alloy",
+        voice="verse",
         input=answer
     )
 
