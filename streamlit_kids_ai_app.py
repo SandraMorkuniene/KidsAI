@@ -29,6 +29,14 @@ lang_map = {
 
 selected_lang_code = lang_map[language]
 
+for message in st.session_state.chat_history:
+    if message["role"] == "user":
+        with st.chat_message("user", avatar="🧒"):
+            st.write(message["content"])
+    else:
+        with st.chat_message("assistant", avatar="🤖"):
+            st.write(message["content"])
+            
 
 # --- Microphone Recorder ---
 audio = mic_recorder(
