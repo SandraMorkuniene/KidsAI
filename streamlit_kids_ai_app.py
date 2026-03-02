@@ -3,6 +3,8 @@ from openai import OpenAI
 from streamlit_mic_recorder import mic_recorder
 import tempfile
 
+st.set_page_config(page_title="Kids AI 🌈", page_icon="🌈")
+
 client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 
 # --- Language selection ---
@@ -36,7 +38,7 @@ translations = {
 
 ui = translations[language]
 
-st.set_page_config(page_title="Kids AI 🌈", page_icon="🌈")
+
 st.title(ui["title"])
 st.write(ui["subtitle"])
 
