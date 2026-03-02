@@ -5,16 +5,41 @@ import tempfile
 
 client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 
+translations = {
+    "English": {
+        "title": "🌈 Kids AI",
+        "subtitle": "Shoot your question!",
+        "language_label": "Language:",
+        "new_chat": "🔄 Start New Conversation",
+        "new_chat_success": "Conversation reset!",
+        "download_chat": "⬇️ Download Conversation",
+        "thinking": "💬 Let me think!",
+        "record_start": "🎤 Click to start recording",
+        "record_stop": "🛑 Stop recording"
+    },
+    "Lithuanian": {
+        "title": "🌈 Vaikų AI",
+        "subtitle": "Užduok savo klausimą!",
+        "language_label": "Kalba:",
+        "new_chat": "🔄 Naujas pokalbis",
+        "new_chat_success": "Pradėkim iš naujo!",
+        "download_chat": "⬇️ Atsisiųsti pokalbį",
+        "thinking": "💬 Galvoju...",
+        "record_start": "🎤 Spausk ir pradėk kalbėti",
+        "record_stop": "🛑 Sustabdyti įrašą"
+    }
+}
+
 st.set_page_config(page_title="Kids AI 🌈", page_icon="🌈")
-st.title("🌈 Kids AI")
-st.write("Shoot your question!")
+st.title(ui["title"])
+st.write(ui["subtitle"])
 
 # --- Initialize memory ---
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # --- Reset conversation button ---
-if st.button("🔄 Start New Conversation"):
+if st.button(ui["new_chat"]):
     st.session_state.chat_history = []
     st.rerun()
     #st.success("Conversation reset!")    
@@ -22,6 +47,7 @@ if st.button("🔄 Start New Conversation"):
 
 # --- Language selection ---
 language = st.selectbox("Language:", ["Lithuanian", "English"])
+ui = translations[language]
 
 # Map UI language to ISO code
 lang_map = {
@@ -42,8 +68,8 @@ for message in st.session_state.chat_history:
 
 # --- Microphone Recorder ---
 audio = mic_recorder(
-    start_prompt="🎤 Click to start recording",
-    stop_prompt="🛑 Stop recording",
+    start_prompt=ui["record_start"],
+    stop_prompt=ui["record_stop"],
     key="recorder"
 )
 
@@ -73,7 +99,7 @@ if audio:
     # --- Keep memory short (last 10 messages) ---
     st.session_state.chat_history = st.session_state.chat_history[-10:]
 
-    st.write("💬 Thinking...")
+    st.write(ui["thinking"])
 
     # --- Generate Answer with Web Search + Memory ---
     response = OpenAI().responses.create(
