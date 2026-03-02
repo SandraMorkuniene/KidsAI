@@ -20,6 +20,7 @@ translations = {
         "new_chat_success": "Conversation reset!",
         "download_chat": "⬇️ Download Conversation",
         "thinking": "💬 Let me think!",
+        "speaking": "🔊 Speaking...",
         "record_start": "🎤 Click to start recording",
         "record_stop": "🛑 Stop recording"
     },
@@ -31,6 +32,7 @@ translations = {
         "new_chat_success": "Pradėkim iš naujo!",
         "download_chat": "⬇️ Atsisiųsti pokalbį",
         "thinking": "💬 Galvoju...",
+        "speaking": "🔊 Atsakau...",
         "record_start": "🎤 Spausk ir pradėk kalbėti",
         "record_stop": "🛑 Sustabdyti įrašą"
     }
@@ -145,7 +147,7 @@ Rules:
     #st.write(answer)
 
     # --- Text to Speech ---
-    st.write("🔊 Speaking...")
+    st.write(ui["speaking"])
 
     tts = client.audio.speech.create(
         model="gpt-4o-mini-tts",
@@ -155,6 +157,6 @@ Rules:
 
     audio_bytes = tts.read()
 
-    st.audio(audio_bytes, format="audio/mp3")
-    st.download_button("⬇️ Download Voice", audio_bytes, "answer.mp3")
+    #st.audio(audio_bytes, format="audio/mp3")
+    #st.download_button("⬇️ Download Voice", audio_bytes, "answer.mp3")
 
