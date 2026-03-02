@@ -26,7 +26,7 @@ translations = {
     },
     "Lithuanian": {
         "title": "🌈 Vaikų AI",
-        "subtitle": "Užduok savo klausimą!",
+        "subtitle": "Užduok klausimą!",
         "language_label": "Kalba:",
         "new_chat": "🔄 Naujas pokalbis",
         "new_chat_success": "Pradėkim iš naujo!",
@@ -157,6 +157,6 @@ Rules:
 
     audio_bytes = tts.read()
 
-    #st.audio(audio_bytes, format="audio/mp3")
+    st.audio(audio_bytes, format="audio/mp3")
     #st.download_button("⬇️ Download Voice", audio_bytes, "answer.mp3")
 
