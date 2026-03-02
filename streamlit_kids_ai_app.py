@@ -5,6 +5,10 @@ import tempfile
 
 client = OpenAI()  # Reads OPENAI_API_KEY from Streamlit Secrets
 
+# --- Language selection ---
+language = st.selectbox("Language:", ["Lithuanian", "English"])
+
+
 translations = {
     "English": {
         "title": "🌈 Kids AI",
@@ -30,6 +34,8 @@ translations = {
     }
 }
 
+ui = translations[language]
+
 st.set_page_config(page_title="Kids AI 🌈", page_icon="🌈")
 st.title(ui["title"])
 st.write(ui["subtitle"])
@@ -45,9 +51,6 @@ if st.button(ui["new_chat"]):
     #st.success("Conversation reset!")    
 
 
-# --- Language selection ---
-language = st.selectbox("Language:", ["Lithuanian", "English"])
-ui = translations[language]
 
 # Map UI language to ISO code
 lang_map = {
