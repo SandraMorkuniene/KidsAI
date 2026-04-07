@@ -142,12 +142,6 @@ Rules:
             for content in item.content:
                 if content.type == "output_text":
                     answer += content.text
-    answer = ""
-    for item in response.output:
-        if item.type == "message":
-            for content in item.content:
-                if content.type == "output_text":
-                    answer += content.text
     
     
     # --- Rewrite clean child-friendly answer ---
@@ -160,7 +154,7 @@ Rules:
     You are cleaning an AI answer for a child.
     
     Your job:
-    - Keep only the useful final answer
+    - Keep only the useful exact final answer
     - Remove source names, websites, schedules, tables, repeated details, and raw search results
     - Speak naturally and simply for a child
     - Keep it short and friendly
