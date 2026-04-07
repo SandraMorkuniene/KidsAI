@@ -142,6 +142,40 @@ Rules:
             for content in item.content:
                 if content.type == "output_text":
                     answer += content.text
+    answer = ""
+    for item in response.output:
+        if item.type == "message":
+            for content in item.content:
+                if content.type == "output_text":
+                    answer += content.text
+    
+    
+    # --- Rewrite clean child-friendly answer ---
+    clean_response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": f"""
+    You are cleaning an AI answer for a child.
+    
+    Your job:
+    - Keep only the useful final answer
+    - Remove source names, websites, schedules, tables, repeated details, and raw search results
+    - Speak naturally and simply for a child
+    - Keep it short and friendly
+    - Respond in {language}
+    """
+            },
+            {
+                "role": "user",
+                "content": answer
+            }
+        ],
+        temperature=0.4
+    )
+    
+    answer = clean_response.choices[0].message.content   
 
     # --- Save assistant reply to memory ---
     st.session_state.chat_history.append({
